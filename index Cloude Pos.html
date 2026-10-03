@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atlas POS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--page:#e9e8f6;--card:#fff;--ink:#14195a;--muted:#5f659b;--line:#d6d8ee;--cobalt:#2a36e8;--tang:#ff7a1a;--warn:#c2410c;--warn-bg:#fff0e0;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--page:#0c0e2e;--card:#171b4b;--ink:#eef0ff;--muted:#9ba2dc;--line:#2c3272;--cobalt:#4b5bff;--warn:#ff9a5c;--warn-bg:#3a2410}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.45 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:3px solid var(--tang);outline-offset:2px}
+[hidden]{display:none!important}
+.wrap{max-width:1060px;margin:0 auto;padding:16px 16px 110px}
+.logo{font:700 1.3rem "Unbounded",system-ui,sans-serif;letter-spacing:-.03em}
+h1,h2{font-family:"Unbounded",system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 12px}h2{font-size:1.02rem}h1{font-size:1.4rem}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+header small{display:block;color:var(--muted)}
+.link{border:0;background:transparent;color:var(--muted);text-decoration:underline;padding:6px}
+.box{max-width:420px;margin:8vh auto 0;background:var(--card);border-radius:22px;padding:24px}
+.box p{color:var(--muted)}
+label{display:block;font-size:.88rem;color:var(--muted);margin:12px 0 4px}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:var(--page)}
+.btn{width:100%;margin-top:16px;padding:13px;border:0;border-radius:12px;background:var(--cobalt);color:#fff;font-weight:700}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);margin-top:8px}
+.err{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:9px 12px;margin-top:12px;font-weight:500}
+nav{display:flex;gap:4px;background:var(--line);padding:4px;border-radius:14px;margin-bottom:16px}
+nav button{flex:1;border:0;background:transparent;padding:10px;border-radius:10px;font-weight:700;color:var(--muted)}
+nav button[aria-selected="true"]{background:var(--card);color:var(--ink)}
+.layout{display:grid;gap:16px}
+@media(min-width:860px){.layout{grid-template-columns:1fr 340px;align-items:start}.cart{position:sticky;top:16px}.bar{display:none!important}.wrap{padding-bottom:40px}}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:10px 0 12px}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.prod{display:flex;flex-direction:column;gap:2px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;min-height:92px}
+.prod:active:not(:disabled){transform:scale(.97)}.prod:disabled{opacity:.45;cursor:not-allowed}
+.prod .p{font:700 1.05rem "Unbounded",system-ui,sans-serif;color:var(--cobalt);margin-top:auto}
+@media(prefers-color-scheme:dark){.prod .p{color:#aab2ff}}
+.stock{font-size:.8rem;color:var(--muted)}.stock.low{color:var(--warn);font-weight:700}
+.panel{background:var(--card);border-radius:18px;padding:16px}
+.line{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+.line .n{flex:1;min-width:0}.line .n span{display:block;font-size:.85rem;color:var(--muted)}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button,.mini{min-width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--page);font-weight:700;padding:0 10px}
+.total{display:flex;justify-content:space-between;font:700 1.25rem "Unbounded",system-ui,sans-serif;margin:14px 0 0}
+.empty{color:var(--muted);padding:16px 4px;text-align:center}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);display:flex;gap:12px;align-items:center}
+.bar .t{flex:1;font-weight:700;font-size:1.1rem}.bar small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.bar .btn{width:auto;margin:0;padding:12px 20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--cobalt);color:#fff;border-radius:16px;padding:12px 14px}.stat small{opacity:.8}.stat div{font:700 1.2rem "Unbounded",system-ui,sans-serif}
+.row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}.row small{color:var(--muted);display:block}
+.meth{display:flex;align-items:center;gap:10px;margin:7px 0}.meth i{display:block;height:10px;border-radius:5px;background:var(--tang)}.meth span:first-child{width:92px}
+.tbl{overflow-x:auto}.tbl table{width:100%;border-collapse:collapse;min-width:520px}.tbl th,.tbl td{text-align:left;padding:9px 6px;border-bottom:1px solid var(--line)}.tbl th{color:var(--muted);font-weight:500;font-size:.85rem}
+form.add{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:14px}form.add .btn{margin:0}
+dialog{border:0;border-radius:20px;background:var(--card);color:var(--ink);padding:22px;width:min(380px,92vw)}
+dialog::backdrop{background:rgba(5,8,30,.6)}
+.methods{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:14px 0}
+.methods label{border:1px solid var(--line);border-radius:11px;padding:10px 4px;text-align:center;cursor:pointer;font-size:.88rem;margin:0;color:var(--ink)}
+.methods input{position:absolute;opacity:0;width:1px}
+.methods label:has(input:checked){background:var(--ink);color:var(--page);border-color:var(--ink)}
+.methods label:has(input:focus-visible){outline:3px solid var(--tang)}
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--page);padding:10px 18px;border-radius:99px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}.toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section class="box" id="setup" hidden>
+  <div class="logo">atlas</div><h2 style="margin-top:14px">Falta conectar Supabase</h2>
+  <p>Abre este archivo y reemplaza <b>SUPABASE_URL</b> y <b>SUPABASE_KEY</b> (al inicio del script) por los datos de tu proyecto.</p>
+</section>
+
+<section class="box" id="auth" hidden>
+  <div class="logo">atlas</div>
+  <h2 style="margin-top:14px" id="authTitle">Inicia sesión</h2>
+  <form id="authForm">
+    <label for="em">Correo</label><input id="em" type="email" autocomplete="email" required>
+    <label for="pw">Contraseña</label><input id="pw" type="password" minlength="6" autocomplete="current-password" required>
+    <button class="btn" id="authBtn">Entrar</button>
+  </form>
+  <div class="err" id="authErr" hidden></div>
+  <button class="link" id="authSwap" style="margin-top:10px">¿No tienes cuenta? Crear una</button>
+</section>
+
+<section class="box" id="onboard" hidden>
+  <div class="logo">atlas</div><h2 style="margin-top:14px">Crea tu negocio</h2><p>Será el espacio donde guardas productos y ventas.</p>
+  <form id="bizForm">
+    <label for="bn">Nombre del negocio</label><input id="bn" required maxlength="60">
+    <label for="bc">Moneda</label>
+    <select id="bc"><option>USD</option><option>COP</option><option>MXN</option><option>PEN</option><option>ARS</option><option>CLP</option><option>EUR</option></select>
+    <button class="btn">Crear negocio</button>
+  </form>
+  <div class="err" id="bizErr" hidden></div>
+  <button class="link" data-out style="margin-top:10px">Salir</button>
+</section>
+
+<section id="app" hidden>
+  <header><div><span class="logo">atlas</span><small id="bizName"></small></div><button class="link" data-out>Salir</button></header>
+  <nav role="tablist" aria-label="Secciones">
+    <button role="tab" data-v="sell" aria-selected="true">Vender</button>
+    <button role="tab" data-v="stock" aria-selected="false">Inventario</button>
+    <button role="tab" data-v="sales" aria-selected="false">Ventas</button>
+  </nav>
+
+  <div id="sell"><div class="layout">
+    <div><input id="q" type="search" placeholder="Buscar producto" aria-label="Buscar producto"><div class="chips" id="chips"></div><div class="grid" id="grid"></div></div>
+    <aside class="panel cart"><h2>Pedido actual</h2><div id="lines"></div>
+      <div class="total"><span>Total</span><span id="tot"></span></div>
+      <button class="btn" id="pay">Cobrar</button><button class="btn ghost" id="clear">Vaciar pedido</button></aside>
+  </div></div>
+
+  <div id="stock" hidden><div class="panel"><h2>Productos</h2>
+    <div class="tbl"><table><thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Existencias</th><th></th></tr></thead><tbody id="stbody"></tbody></table></div>
+    <form class="add" id="addForm"><input name="name" placeholder="Nombre" required aria-label="Nombre"><input name="category" placeholder="Categoría" aria-label="Categoría"><input name="price" type="number" step="0.01" min="0" placeholder="Precio" required aria-label="Precio"><input name="cost" type="number" step="0.01" min="0" placeholder="Costo" aria-label="Costo"><input name="stock" type="number" min="0" step="1" placeholder="Existencias" required aria-label="Existencias"><button class="btn">Agregar</button></form>
+  </div></div>
+
+  <div id="sales" hidden><div class="stats" id="stats"></div>
+    <div class="layout"><div class="panel"><h2>Ventas de hoy</h2><div id="slist"></div></div><div class="panel"><h2>Por método de pago</h2><div id="meths"></div></div></div>
+  </div>
+</section>
+</div>
+
+<div class="bar" id="bar" hidden><div class="t"><small id="bn2"></small><span id="bt"></span></div><button class="btn" id="pay2">Ver pedido y cobrar</button></div>
+
+<dialog id="dlg">
+  <h2>Cobrar</h2><div style="font:700 1.6rem 'Unbounded',system-ui,sans-serif" id="dtot"></div>
+  <div class="methods" role="radiogroup" aria-label="Método de pago">
+    <label><input type="radio" name="m" value="Efectivo" checked>Efectivo</label>
+    <label><input type="radio" name="m" value="Tarjeta">Tarjeta</label>
+    <label><input type="radio" name="m" value="Transferencia">Transferencia</label></div>
+  <div id="cash"><label for="rec">Dinero recibido</label><input id="rec" type="number" min="0" step="0.01" inputmode="decimal"><p id="chg" style="font-weight:700;margin:8px 0 0"></p></div>
+  <div class="err" id="payErr" hidden></div>
+  <button class="btn" id="ok">Registrar venta</button><button class="btn ghost" id="cancel" type="button">Volver</button>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ===== CONFIGURACIÓN: pega aquí los datos de tu proyecto de Supabase =====
+const SUPABASE_URL = 'https://sqnvygjbxqcjwquxxsuc.supabase.co';            // ejemplo: https://abcdefgh.supabase.co
+const SUPABASE_KEY = 'sb_publishable__jnXITwGh6yKbEFDp35ERQ_rP0tGXNO';        // la que empieza con sb_publishable_  (NUNCA la sb_secret_)
+// ========================================================================
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LOW=5;
+let sb,S={user:null,biz:null,role:null,products:[],sales:[]},cart={},cat='Todas',mode='login';
+const money=n=>{try{return new Intl.NumberFormat('es',{style:'currency',currency:S.biz?.currency||'USD'}).format(n)}catch(e){return '$'+Number(n).toFixed(2)}};
+const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),2200)};
+function msg(e){const m=(e&&e.message)||String(e);
+  if(/Invalid login/i.test(m))return 'Correo o contraseña incorrectos.';
+  if(/already registered/i.test(m))return 'Ese correo ya tiene cuenta. Inicia sesión.';
+  if(/Password should/i.test(m))return 'La contraseña debe tener al menos 6 caracteres.';
+  if(/not confirmed/i.test(m))return 'Confirma tu correo antes de entrar.';
+  if(/Failed to fetch|NetworkError/i.test(m))return 'No hay conexión o la URL de Supabase es incorrecta.';
+  return m}
+function show(id){['setup','auth','onboard','app'].forEach(x=>$('#'+x).hidden=x!==id);$('#bar').hidden=id!=='app'||$('#sell').hidden}
+function setErr(id,m){const e=$('#'+id);e.hidden=!m;e.textContent=m||''}
+
+async function boot(){
+  if(SUPABASE_URL.startsWith('PEGA_')||SUPABASE_KEY.startsWith('PEGA_'))return show('setup');
+  sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  const{data:{session}}=await sb.auth.getSession();
+  session?enter(session.user):show('auth');
+}
+async function enter(user){
+  S.user=user;
+  const{data,error}=await sb.from('memberships').select('role,business_id,businesses(name,currency)').eq('user_id',user.id);
+  if(error){show('auth');return setErr('authErr',msg(error))}
+  if(!data.length)return show('onboard');
+  const m=data[0];S.biz={id:m.business_id,name:m.businesses.name,currency:m.businesses.currency};S.role=m.role;
+  $('#bizName').textContent=S.biz.name;
+  await loadAll();show('app');render();
+}
+async function loadAll(){
+  const d=new Date();d.setHours(0,0,0,0);
+  const[p,s]=await Promise.all([
+    sb.from('products').select('*').eq('business_id',S.biz.id).eq('active',true).order('name'),
+    sb.from('sales').select('id,total,method,created_at,sale_items(name,qty)').eq('business_id',S.biz.id).gte('created_at',d.toISOString()).order('created_at',{ascending:false})]);
+  if(p.error||s.error)return toast(msg(p.error||s.error));
+  S.products=p.data;S.sales=s.data;
+}
+
+// ----- Acceso -----
+$('#authSwap').onclick=()=>{mode=mode==='login'?'register':'login';const r=mode==='register';
+  $('#authTitle').textContent=r?'Crea tu cuenta':'Inicia sesión';$('#authBtn').textContent=r?'Crear cuenta':'Entrar';
+  $('#authSwap').textContent=r?'¿Ya tienes cuenta? Inicia sesión':'¿No tienes cuenta? Crear una';
+  $('#pw').autocomplete=r?'new-password':'current-password';setErr('authErr')};
+$('#authForm').onsubmit=async e=>{e.preventDefault();setErr('authErr');$('#authBtn').disabled=true;
+  const c={email:$('#em').value.trim(),password:$('#pw').value};
+  const{data,error}=mode==='login'?await sb.auth.signInWithPassword(c):await sb.auth.signUp(c);
+  $('#authBtn').disabled=false;
+  if(error)return setErr('authErr',msg(error));
+  if(data.session)enter(data.user);else setErr('authErr','Cuenta creada. Revisa tu correo para confirmarla y luego inicia sesión.')};
+$$('[data-out]').forEach(b=>b.onclick=async()=>{await sb.auth.signOut();cart={};show('auth')});
+$('#bizForm').onsubmit=async e=>{e.preventDefault();setErr('bizErr');
+  const{error}=await sb.rpc('create_business',{p_name:$('#bn').value.trim(),p_currency:$('#bc').value});
+  if(error)return setErr('bizErr',msg(error));enter(S.user)};
+
+// ----- Navegación -----
+$$('nav button').forEach(b=>b.onclick=()=>{$$('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  ['sell','stock','sales'].forEach(v=>$('#'+v).hidden=v!==b.dataset.v);$('#bar').hidden=b.dataset.v!=='sell';render()});
+
+// ----- Vender -----
+const items=()=>Object.entries(cart).map(([id,q])=>{const p=S.products.find(x=>x.id===id);return p&&{...p,qty:q}}).filter(Boolean);
+const total=()=>items().reduce((a,i)=>a+i.price*i.qty,0);
+function renderSell(){
+  const cats=['Todas',...new Set(S.products.map(p=>p.category))];
+  $('#chips').innerHTML=cats.map(c=>`<button class="chip" aria-pressed="${c===cat}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+  $$('.chip').forEach(b=>b.onclick=()=>{cat=b.dataset.c;renderSell()});
+  const q=$('#q').value.trim().toLowerCase();
+  const list=S.products.filter(p=>(cat==='Todas'||p.category===cat)&&p.name.toLowerCase().includes(q));
+  $('#grid').innerHTML=list.length?list.map(p=>{const left=p.stock-(cart[p.id]||0);return `<button class="prod" data-id="${p.id}" ${left<=0?'disabled':''}><b>${esc(p.name)}</b><span class="stock ${left<=LOW?'low':''}">${left<=0?'Agotado':left+' disp.'}</span><span class="p">${money(p.price)}</span></button>`}).join(''):`<p class="empty">${S.products.length?'Ningún producto coincide.':'Aún no tienes productos. Agrégalos en Inventario.'}</p>`;
+  $$('.prod').forEach(b=>b.onclick=()=>{const p=S.products.find(x=>x.id===b.dataset.id);if((cart[p.id]||0)<p.stock){cart[p.id]=(cart[p.id]||0)+1;renderSell()}});
+  const it=items(),n=it.reduce((a,i)=>a+i.qty,0);
+  $('#lines').innerHTML=it.length?it.map(i=>`<div class="line"><div class="n">${esc(i.name)}<span>${money(i.price)} c/u</span></div><div class="qty"><button data-d="-1" data-id="${i.id}" aria-label="Quitar uno">−</button><b>${i.qty}</b><button data-d="1" data-id="${i.id}" aria-label="Agregar uno">+</button></div><b>${money(i.price*i.qty)}</b></div>`).join(''):'<p class="empty">Toca un producto para empezar el pedido.</p>';
+  $$('.qty button').forEach(b=>b.onclick=()=>{const p=S.products.find(x=>x.id===b.dataset.id),k=(cart[p.id]||0)+ +b.dataset.d;if(k<=0)delete cart[p.id];else if(k<=p.stock)cart[p.id]=k;renderSell()});
+  $('#tot').textContent=$('#bt').textContent=money(total());$('#bn2').textContent=n+(n===1?' artículo':' artículos');
+  $('#pay').disabled=$('#pay2').disabled=!n;$('#clear').hidden=!n;
+}
+$('#q').oninput=renderSell;
+$('#clear').onclick=()=>{cart={};renderSell()};
+const openPay=()=>{if(!items().length)return;$('#dtot').textContent=money(total());$('#rec').value='';$('#chg').textContent='';setErr('payErr');$('#dlg').showModal()};
+$('#pay').onclick=$('#pay2').onclick=openPay;
+$('#cancel').onclick=()=>$('#dlg').close();
+$$('input[name=m]').forEach(r=>r.onchange=()=>$('#cash').hidden=$('input[name=m]:checked').value!=='Efectivo');
+$('#rec').oninput=()=>{const d=$('#rec').value-total();$('#chg').textContent=$('#rec').value?(d>=0?'Cambio: '+money(d):'Faltan '+money(-d)):''};
+$('#ok').onclick=async()=>{
+  const method=$('input[name=m]:checked').value;
+  if(method==='Efectivo'&&$('#rec').value&&+$('#rec').value<total())return setErr('payErr','El dinero recibido no cubre el total.');
+  $('#ok').disabled=true;setErr('payErr');
+  const{error}=await sb.rpc('create_sale',{p_business:S.biz.id,p_method:method,p_items:items().map(i=>({product_id:i.id,qty:i.qty}))});
+  $('#ok').disabled=false;
+  if(error)return setErr('payErr',msg(error));
+  const t=total();cart={};$('#dlg').close();await loadAll();render();toast('Venta registrada · '+money(t));
+};
+
+// ----- Inventario -----
+function renderStock(){
+  const own=S.role==='owner';$('#addForm').hidden=!own;
+  $('#stbody').innerHTML=S.products.length?S.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.category)}</td><td>${money(p.price)}</td><td class="stock ${p.stock<=LOW?'low':''}" style="font-size:1rem">${p.stock}</td><td>${own?`<button class="mini" data-r="${p.id}">+10</button> <button class="mini" data-x="${p.id}">Quitar</button>`:''}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sin productos todavía.</td></tr>';
+  $$('[data-r]').forEach(b=>b.onclick=async()=>{const p=S.products.find(x=>x.id===b.dataset.r);const{error}=await sb.from('products').update({stock:p.stock+10}).eq('id',p.id);if(error)return toast(msg(error));await loadAll();render();toast('Existencias actualizadas')});
+  $$('[data-x]').forEach(b=>b.onclick=async()=>{const{error}=await sb.from('products').update({active:false}).eq('id',b.dataset.x);if(error)return toast(msg(error));delete cart[b.dataset.x];await loadAll();render();toast('Producto quitado')});
+}
+$('#addForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);
+  const{error}=await sb.from('products').insert({business_id:S.biz.id,name:f.get('name').trim(),category:(f.get('category')||'').trim()||'General',price:+f.get('price'),cost:+(f.get('cost')||0),stock:Math.floor(+f.get('stock'))});
+  if(error)return toast(msg(error));e.target.reset();await loadAll();render();toast('Producto agregado')};
+
+// ----- Ventas -----
+function renderSales(){
+  const sum=S.sales.reduce((a,s)=>a+ +s.total,0),n=S.sales.length;
+  const units=S.sales.reduce((a,s)=>a+s.sale_items.reduce((b,i)=>b+i.qty,0),0);
+  $('#stats').innerHTML=[['Vendido hoy',money(sum)],['Ventas',n],['Ticket promedio',money(n?sum/n:0)],['Artículos',units]].map(x=>`<div class="stat"><small>${x[0]}</small><div>${x[1]}</div></div>`).join('');
+  $('#slist').innerHTML=n?S.sales.map(s=>`<div class="row"><div><b>${new Date(s.created_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</b> · ${esc(s.method)}<small>${s.sale_items.map(i=>i.qty+'× '+esc(i.name)).join(', ')}</small></div><b>${money(s.total)}</b></div>`).join(''):'<p class="empty">Aún no hay ventas hoy.</p>';
+  const m={};S.sales.forEach(s=>m[s.method]=(m[s.method]||0)+ +s.total);
+  $('#meths').innerHTML=sum?Object.entries(m).map(([k,v])=>`<div class="meth"><span>${esc(k)}</span><i style="width:${Math.max(4,v/sum*100)}%"></i><b>${money(v)}</b></div>`).join(''):'<p class="empty">Sin datos todavía.</p>';
+}
+function render(){renderSell();renderStock();renderSales()}
+boot();
+</script>
+</body>
+</html>
